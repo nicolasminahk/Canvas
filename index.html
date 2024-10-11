@@ -2,45 +2,51 @@
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <title>Resak's sketch</title>
         <link rel="icon" href="public/favicon.ico" type="image/x-icon" />
         <style>
+            * {
+                box-sizing: border-box;
+            }
             body {
                 font-family: Arial, sans-serif;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
                 margin: 0;
+                padding: 0;
                 background-color: #f0f0f0;
-            }
-            .container {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+                min-height: 100vh;
+            }
+            .container {
+                width: 100%;
+                max-width: 800px;
+                padding: 10px;
                 background-color: white;
-                padding: 20px;
                 border-radius: 10px;
                 box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             }
             h1 {
-                margin-bottom: 20px;
+                text-align: center;
                 color: #333;
+                margin-bottom: 10px;
             }
             #canvas {
+                width: 100%;
+                height: auto;
                 border: 1px solid #000;
-                cursor: crosshair;
+                touch-action: none;
             }
             .controls {
-                margin-top: 20px;
                 display: flex;
                 flex-wrap: wrap;
                 justify-content: center;
+                gap: 5px;
+                margin-top: 10px;
             }
             button,
             select {
-                margin: 5px;
                 padding: 8px 12px;
                 font-size: 14px;
                 border: none;
@@ -54,7 +60,6 @@
                 background-color: #45a049;
             }
             #colorPicker {
-                margin: 5px;
                 padding: 0;
                 width: 40px;
                 height: 40px;
@@ -63,6 +68,8 @@
             }
             #undoRedo {
                 display: flex;
+                justify-content: center;
+                gap: 5px;
                 margin-top: 10px;
             }
             #undoRedo button {
@@ -71,19 +78,29 @@
             #undoRedo button:hover {
                 background-color: #007b9a;
             }
+            @media (max-width: 600px) {
+                .container {
+                    padding: 5px;
+                }
+                button,
+                select {
+                    padding: 6px 10px;
+                    font-size: 12px;
+                }
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <h1>Resak's sketch</h1>
-            <canvas id="canvas" width="800" height="600"></canvas>
+            <canvas id="canvas"></canvas>
             <div class="controls">
                 <button id="pencil">Lápiz</button>
                 <button id="eraser">Borrador</button>
                 <button id="rect">Rectángulo</button>
                 <button id="circle">Círculo</button>
                 <button id="line">Línea</button>
-                <button id="pixelMode">Modo Pixel</button>
+                <button id="pixelMode">Pixel</button>
                 <button id="move">Mover</button>
                 <input type="color" id="colorPicker" value="#000000" />
                 <select id="lineWidth">
@@ -109,28 +126,66 @@
             let startX, startY
             let lastX, lastY
 
-            // Buffer canvas para el movimiento
-            const bufferCanvas = document.createElement('canvas')
-            const bufferCtx = bufferCanvas.getContext('2d')
-            bufferCanvas.width = canvas.width
-            bufferCanvas.height = canvas.height
-
-            // Historial para deshacer/rehacer
-            let history = []
-            let historyIndex = -1
+            // Ajustar tamaño del canvas
+            function resizeCanvas() {
+                const container = document.querySelector('.container')
+                canvas.width = container.clientWidth - 20
+                canvas.height = window.innerHeight * 0.6
+                redrawCanvas()
+            }
 
             // Configuración inicial
             ctx.strokeStyle = '#000000'
             ctx.lineWidth = 1
             ctx.lineCap = 'round'
 
-            // Eventos del mouse
+            // Buffer canvas para el movimiento
+            const bufferCanvas = document.createElement('canvas')
+            const bufferCtx = bufferCanvas.getContext('2d')
+
+            // Historial para deshacer/rehacer
+            let history = []
+            let historyIndex = -1
+
+            // Eventos táctiles y del mouse
             canvas.addEventListener('mousedown', startDrawing)
             canvas.addEventListener('mousemove', draw)
             canvas.addEventListener('mouseup', stopDrawing)
             canvas.addEventListener('mouseout', stopDrawing)
 
-            // Funciones de dibujo
+            canvas.addEventListener('touchstart', handleTouchStart)
+            canvas.addEventListener('touchmove', handleTouchMove)
+            canvas.addEventListener('touchend', handleTouchEnd)
+
+            window.addEventListener('resize', resizeCanvas)
+            resizeCanvas()
+
+            function handleTouchStart(e) {
+                e.preventDefault()
+                const touch = e.touches[0]
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                })
+                canvas.dispatchEvent(mouseEvent)
+            }
+
+            function handleTouchMove(e) {
+                e.preventDefault()
+                const touch = e.touches[0]
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                })
+                canvas.dispatchEvent(mouseEvent)
+            }
+
+            function handleTouchEnd(e) {
+                e.preventDefault()
+                const mouseEvent = new MouseEvent('mouseup', {})
+                canvas.dispatchEvent(mouseEvent)
+            }
+
             function startDrawing(e) {
                 isDrawing = true
                 ;[startX, startY] = [e.offsetX, e.offsetY]
@@ -227,6 +282,17 @@
                 img.onload = () => {
                     ctx.clearRect(0, 0, canvas.width, canvas.height)
                     ctx.drawImage(img, 0, 0)
+                }
+            }
+
+            function redrawCanvas() {
+                if (history.length > 0) {
+                    const img = new Image()
+                    img.src = history[historyIndex]
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height)
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+                    }
                 }
             }
 
