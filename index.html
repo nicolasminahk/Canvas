@@ -3,348 +3,273 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <title>Resak's sketch</title>
+        <title>Resak's Pixel Art Studio</title>
         <link rel="icon" href="public/favicon.ico" type="image/x-icon" />
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
             * {
                 box-sizing: border-box;
-            }
-            body {
-                font-family: Arial, sans-serif;
                 margin: 0;
                 padding: 0;
-                background-color: #f0f0f0;
+            }
+
+            body {
+                font-family: 'Press Start 2P', cursive;
+                background-color: #000;
+                color: #fff;
+                line-height: 1.6;
+                padding: 20px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 min-height: 100vh;
             }
+
             .container {
-                width: 100%;
                 max-width: 800px;
-                padding: 10px;
-                background-color: white;
-                border-radius: 10px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                width: 100%;
             }
+
             h1 {
                 text-align: center;
-                color: #333;
-                margin-bottom: 10px;
+                color: #ff0;
+                margin-bottom: 20px;
+                text-shadow: 3px 3px #f00;
             }
-            #canvas {
-                width: 100%;
-                height: auto;
-                border: 1px solid #000;
-                touch-action: none;
+
+            #pixelCanvas {
+                border: 4px solid #fff;
+                image-rendering: pixelated;
+                cursor: crosshair;
             }
+
             .controls {
                 display: flex;
                 flex-wrap: wrap;
                 justify-content: center;
-                gap: 5px;
-                margin-top: 10px;
+                gap: 10px;
+                margin-top: 20px;
             }
-            button,
-            select {
-                padding: 8px 12px;
-                font-size: 14px;
+
+            button {
+                font-family: 'Press Start 2P', cursive;
+                padding: 10px;
+                font-size: 12px;
                 border: none;
-                border-radius: 4px;
-                background-color: #4caf50;
-                color: white;
+                background-color: #00f;
+                color: #fff;
                 cursor: pointer;
                 transition: background-color 0.3s;
             }
+
             button:hover {
-                background-color: #45a049;
+                background-color: #00a;
             }
+
             #colorPicker {
-                padding: 0;
-                width: 40px;
-                height: 40px;
+                width: 50px;
+                height: 50px;
                 border: none;
                 cursor: pointer;
             }
-            #undoRedo {
-                display: flex;
-                justify-content: center;
-                gap: 5px;
-                margin-top: 10px;
+
+            #imageUpload {
+                display: none;
             }
-            #undoRedo button {
-                background-color: #008cba;
+
+            #uploadLabel {
+                font-family: 'Press Start 2P', cursive;
+                padding: 10px;
+                font-size: 12px;
+                background-color: #0f0;
+                color: #000;
+                cursor: pointer;
+                transition: background-color 0.3s;
             }
-            #undoRedo button:hover {
-                background-color: #007b9a;
+
+            #uploadLabel:hover {
+                background-color: #0a0;
             }
+
             @media (max-width: 600px) {
-                .container {
-                    padding: 5px;
+                body {
+                    padding: 10px;
                 }
+
                 button,
-                select {
-                    padding: 6px 10px;
-                    font-size: 12px;
+                #uploadLabel {
+                    font-size: 10px;
+                    padding: 8px;
                 }
             }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>Resak's sketch</h1>
-            <canvas id="canvas"></canvas>
+            <h1>Resak's Pixel Art Studio</h1>
+            <canvas id="pixelCanvas"></canvas>
             <div class="controls">
-                <button id="pencil">Lápiz</button>
-                <button id="eraser">Borrador</button>
-                <button id="rect">Rectángulo</button>
-                <button id="circle">Círculo</button>
-                <button id="line">Línea</button>
-                <button id="pixelMode">Pixel</button>
-                <button id="move">Mover</button>
                 <input type="color" id="colorPicker" value="#000000" />
-                <select id="lineWidth">
-                    <option value="1">1px</option>
-                    <option value="3">3px</option>
-                    <option value="5">5px</option>
-                    <option value="10">10px</option>
-                </select>
-                <button id="clear">Limpiar</button>
-                <button id="download">Descargar</button>
-            </div>
-            <div id="undoRedo">
                 <button id="undo">Deshacer</button>
                 <button id="redo">Rehacer</button>
+                <button id="clear">Limpiar</button>
+                <button id="download">Descargar</button>
+                <input type="file" id="imageUpload" accept="image/*" />
+                <label for="imageUpload" id="uploadLabel">Subir Imagen</label>
             </div>
         </div>
 
         <script>
-            const canvas = document.getElementById('canvas')
+            const canvas = document.getElementById('pixelCanvas')
             const ctx = canvas.getContext('2d')
+            const colorPicker = document.getElementById('colorPicker')
+            const undoBtn = document.getElementById('undo')
+            const redoBtn = document.getElementById('redo')
+            const clearBtn = document.getElementById('clear')
+            const downloadBtn = document.getElementById('download')
+            const imageUpload = document.getElementById('imageUpload')
+
+            const CANVAS_SIZE = 32 // 32x32 pixel canvas
+            const PIXEL_SIZE = 16 // Each pixel is 16x16
+
+            canvas.width = CANVAS_SIZE * PIXEL_SIZE
+            canvas.height = CANVAS_SIZE * PIXEL_SIZE
+
+            let currentColor = '#000000'
             let isDrawing = false
-            let currentTool = 'pencil'
-            let startX, startY
-            let lastX, lastY
+            let history = [getCanvasState()]
+            let historyIndex = 0
 
-            // Ajustar tamaño del canvas
-            function resizeCanvas() {
-                const container = document.querySelector('.container')
-                canvas.width = container.clientWidth - 20
-                canvas.height = window.innerHeight * 0.6
-                redrawCanvas()
+            function getCanvasState() {
+                return ctx.getImageData(0, 0, canvas.width, canvas.height)
             }
 
-            // Configuración inicial
-            ctx.strokeStyle = '#000000'
-            ctx.lineWidth = 1
-            ctx.lineCap = 'round'
-
-            // Buffer canvas para el movimiento
-            const bufferCanvas = document.createElement('canvas')
-            const bufferCtx = bufferCanvas.getContext('2d')
-
-            // Historial para deshacer/rehacer
-            let history = []
-            let historyIndex = -1
-
-            // Eventos táctiles y del mouse
-            canvas.addEventListener('mousedown', startDrawing)
-            canvas.addEventListener('mousemove', draw)
-            canvas.addEventListener('mouseup', stopDrawing)
-            canvas.addEventListener('mouseout', stopDrawing)
-
-            canvas.addEventListener('touchstart', handleTouchStart)
-            canvas.addEventListener('touchmove', handleTouchMove)
-            canvas.addEventListener('touchend', handleTouchEnd)
-
-            window.addEventListener('resize', resizeCanvas)
-            resizeCanvas()
-
-            function handleTouchStart(e) {
-                e.preventDefault()
-                const touch = e.touches[0]
-                const mouseEvent = new MouseEvent('mousedown', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                })
-                canvas.dispatchEvent(mouseEvent)
-            }
-
-            function handleTouchMove(e) {
-                e.preventDefault()
-                const touch = e.touches[0]
-                const mouseEvent = new MouseEvent('mousemove', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY,
-                })
-                canvas.dispatchEvent(mouseEvent)
-            }
-
-            function handleTouchEnd(e) {
-                e.preventDefault()
-                const mouseEvent = new MouseEvent('mouseup', {})
-                canvas.dispatchEvent(mouseEvent)
-            }
-
-            function startDrawing(e) {
-                isDrawing = true
-                ;[startX, startY] = [e.offsetX, e.offsetY]
-                ;[lastX, lastY] = [startX, startY]
-                if (currentTool === 'move') {
-                    bufferCtx.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height)
-                    bufferCtx.drawImage(canvas, 0, 0)
-                } else {
-                    draw(e)
-                }
-            }
-
-            function draw(e) {
-                if (!isDrawing) return
-
-                const x = e.offsetX
-                const y = e.offsetY
-
-                ctx.beginPath()
-
-                switch (currentTool) {
-                    case 'pencil':
-                        ctx.moveTo(lastX, lastY)
-                        ctx.lineTo(x, y)
-                        ctx.stroke()
-                        break
-                    case 'eraser':
-                        const eraserSize = ctx.lineWidth
-                        ctx.clearRect(x - eraserSize / 2, y - eraserSize / 2, eraserSize, eraserSize)
-                        break
-                    case 'rect':
-                        ctx.clearRect(0, 0, canvas.width, canvas.height)
-                        ctx.drawImage(bufferCanvas, 0, 0)
-                        ctx.rect(startX, startY, x - startX, y - startY)
-                        ctx.stroke()
-                        break
-                    case 'circle':
-                        ctx.clearRect(0, 0, canvas.width, canvas.height)
-                        ctx.drawImage(bufferCanvas, 0, 0)
-                        const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2))
-                        ctx.arc(startX, startY, radius, 0, 2 * Math.PI)
-                        ctx.stroke()
-                        break
-                    case 'line':
-                        ctx.clearRect(0, 0, canvas.width, canvas.height)
-                        ctx.drawImage(bufferCanvas, 0, 0)
-                        ctx.moveTo(startX, startY)
-                        ctx.lineTo(x, y)
-                        ctx.stroke()
-                        break
-                    case 'pixel':
-                        ctx.fillRect(Math.floor(x / 10) * 10, Math.floor(y / 10) * 10, 10, 10)
-                        break
-                    case 'move':
-                        const dx = x - lastX
-                        const dy = y - lastY
-                        ctx.clearRect(0, 0, canvas.width, canvas.height)
-                        ctx.drawImage(bufferCanvas, dx, dy)
-                        break
-                }
-
-                ;[lastX, lastY] = [x, y]
-            }
-
-            function stopDrawing() {
-                if (!isDrawing) return
-                isDrawing = false
-                addToHistory()
+            function setCanvasState(state) {
+                ctx.putImageData(state, 0, 0)
             }
 
             function addToHistory() {
-                historyIndex++
-                history = history.slice(0, historyIndex)
-                history.push(canvas.toDataURL())
+                if (historyIndex < history.length - 1) {
+                    history = history.slice(0, historyIndex + 1)
+                }
+                history.push(getCanvasState())
+                historyIndex = history.length - 1
+                updateButtons()
+            }
+
+            function updateButtons() {
+                undoBtn.disabled = historyIndex === 0
+                redoBtn.disabled = historyIndex === history.length - 1
             }
 
             function undo() {
                 if (historyIndex > 0) {
                     historyIndex--
-                    loadFromHistory()
+                    setCanvasState(history[historyIndex])
+                    updateButtons()
                 }
             }
 
             function redo() {
                 if (historyIndex < history.length - 1) {
                     historyIndex++
-                    loadFromHistory()
+                    setCanvasState(history[historyIndex])
+                    updateButtons()
                 }
             }
 
-            function loadFromHistory() {
-                const img = new Image()
-                img.src = history[historyIndex]
-                img.onload = () => {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height)
-                    ctx.drawImage(img, 0, 0)
-                }
-            }
-
-            function redrawCanvas() {
-                if (history.length > 0) {
-                    const img = new Image()
-                    img.src = history[historyIndex]
-                    img.onload = () => {
-                        ctx.clearRect(0, 0, canvas.width, canvas.height)
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-                    }
-                }
-            }
-
-            // Controladores de eventos para los botones
-            document.getElementById('pencil').addEventListener('click', () => (currentTool = 'pencil'))
-            document.getElementById('eraser').addEventListener('click', () => (currentTool = 'eraser'))
-            document.getElementById('rect').addEventListener('click', () => {
-                currentTool = 'rect'
-                bufferCtx.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height)
-                bufferCtx.drawImage(canvas, 0, 0)
-            })
-            document.getElementById('circle').addEventListener('click', () => {
-                currentTool = 'circle'
-                bufferCtx.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height)
-                bufferCtx.drawImage(canvas, 0, 0)
-            })
-            document.getElementById('line').addEventListener('click', () => {
-                currentTool = 'line'
-                bufferCtx.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height)
-                bufferCtx.drawImage(canvas, 0, 0)
-            })
-            document.getElementById('pixelMode').addEventListener('click', () => (currentTool = 'pixel'))
-            document.getElementById('move').addEventListener('click', () => (currentTool = 'move'))
-            document.getElementById('clear').addEventListener('click', () => {
+            function clear() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height)
-                bufferCtx.clearRect(0, 0, bufferCanvas.width, bufferCanvas.height)
                 addToHistory()
-            })
-            document.getElementById('undo').addEventListener('click', undo)
-            document.getElementById('redo').addEventListener('click', redo)
+            }
 
-            // Cambiar color
-            document.getElementById('colorPicker').addEventListener('input', (e) => {
-                ctx.strokeStyle = e.target.value
-                ctx.fillStyle = e.target.value
-            })
-
-            // Cambiar grosor de línea
-            document.getElementById('lineWidth').addEventListener('change', (e) => {
-                ctx.lineWidth = e.target.value
-            })
-
-            // Descargar imagen
-            document.getElementById('download').addEventListener('click', () => {
+            function download() {
                 const link = document.createElement('a')
-                link.download = 'resaks_sketch.png'
+                link.download = 'pixel_art.png'
                 link.href = canvas.toDataURL()
                 link.click()
+            }
+
+            function drawPixel(x, y) {
+                const pixelX = Math.floor(x / PIXEL_SIZE) * PIXEL_SIZE
+                const pixelY = Math.floor(y / PIXEL_SIZE) * PIXEL_SIZE
+                ctx.fillStyle = currentColor
+                ctx.fillRect(pixelX, pixelY, PIXEL_SIZE, PIXEL_SIZE)
+            }
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDrawing = true
+                drawPixel(e.offsetX, e.offsetY)
             })
 
-            // Inicializar historial
-            addToHistory()
+            canvas.addEventListener('mousemove', (e) => {
+                if (isDrawing) {
+                    drawPixel(e.offsetX, e.offsetY)
+                }
+            })
+
+            canvas.addEventListener('mouseup', () => {
+                isDrawing = false
+                addToHistory()
+            })
+
+            canvas.addEventListener('mouseleave', () => {
+                if (isDrawing) {
+                    isDrawing = false
+                    addToHistory()
+                }
+            })
+
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault()
+                isDrawing = true
+                const touch = e.touches[0]
+                const rect = canvas.getBoundingClientRect()
+                drawPixel(touch.clientX - rect.left, touch.clientY - rect.top)
+            })
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault()
+                if (isDrawing) {
+                    const touch = e.touches[0]
+                    const rect = canvas.getBoundingClientRect()
+                    drawPixel(touch.clientX - rect.left, touch.clientY - rect.top)
+                }
+            })
+
+            canvas.addEventListener('touchend', () => {
+                isDrawing = false
+                addToHistory()
+            })
+
+            colorPicker.addEventListener('change', (e) => {
+                currentColor = e.target.value
+            })
+
+            undoBtn.addEventListener('click', undo)
+            redoBtn.addEventListener('click', redo)
+            clearBtn.addEventListener('click', clear)
+            downloadBtn.addEventListener('click', download)
+
+            imageUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0]
+                if (file) {
+                    const reader = new FileReader()
+                    reader.onload = function (event) {
+                        const img = new Image()
+                        img.onload = function () {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height)
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+                            addToHistory()
+                        }
+                        img.src = event.target.result
+                    }
+                    reader.readAsDataURL(file)
+                }
+            })
+
+            updateButtons()
         </script>
     </body>
 </html>
