@@ -27,8 +27,11 @@
             }
 
             .container {
-                max-width: 800px;
+                max-width: 100%;
                 width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
             }
 
             h1 {
@@ -36,12 +39,15 @@
                 color: #ff0;
                 margin-bottom: 20px;
                 text-shadow: 3px 3px #f00;
+                font-size: 1.5rem;
             }
 
             #pixelCanvas {
                 border: 4px solid #fff;
                 image-rendering: pixelated;
                 cursor: crosshair;
+                max-width: 100%;
+                height: auto;
             }
 
             .controls {
@@ -50,9 +56,11 @@
                 justify-content: center;
                 gap: 10px;
                 margin-top: 20px;
+                width: 100%;
             }
 
-            button {
+            button,
+            #uploadLabel {
                 font-family: 'Press Start 2P', cursive;
                 padding: 10px;
                 font-size: 12px;
@@ -61,9 +69,13 @@
                 color: #fff;
                 cursor: pointer;
                 transition: background-color 0.3s;
+                flex: 1 0 auto;
+                max-width: calc(50% - 5px);
+                text-align: center;
             }
 
-            button:hover {
+            button:hover,
+            #uploadLabel:hover {
                 background-color: #00a;
             }
 
@@ -79,13 +91,8 @@
             }
 
             #uploadLabel {
-                font-family: 'Press Start 2P', cursive;
-                padding: 10px;
-                font-size: 12px;
                 background-color: #0f0;
                 color: #000;
-                cursor: pointer;
-                transition: background-color 0.3s;
             }
 
             #uploadLabel:hover {
@@ -97,10 +104,19 @@
                     padding: 10px;
                 }
 
+                h1 {
+                    font-size: 1.2rem;
+                }
+
                 button,
                 #uploadLabel {
                     font-size: 10px;
                     padding: 8px;
+                }
+
+                #pixelCanvas {
+                    width: 100%;
+                    height: auto;
                 }
             }
         </style>
@@ -114,7 +130,8 @@
                 <button id="undo">Deshacer</button>
                 <button id="redo">Rehacer</button>
                 <button id="clear">Limpiar</button>
-                <button id="download">Descargar</button>
+                <button id="download">Descargar PNG</button>
+                <button id="downloadJpg">Descargar JPG</button>
                 <input type="file" id="imageUpload" accept="image/*" />
                 <label for="imageUpload" id="uploadLabel">Subir Imagen</label>
             </div>
@@ -128,13 +145,27 @@
             const redoBtn = document.getElementById('redo')
             const clearBtn = document.getElementById('clear')
             const downloadBtn = document.getElementById('download')
+            const downloadJpgBtn = document.getElementById('downloadJpg')
             const imageUpload = document.getElementById('imageUpload')
 
             const CANVAS_SIZE = 32 // 32x32 pixel canvas
-            const PIXEL_SIZE = 16 // Each pixel is 16x16
+            let PIXEL_SIZE = 16 // Each pixel is 16x16
 
-            canvas.width = CANVAS_SIZE * PIXEL_SIZE
-            canvas.height = CANVAS_SIZE * PIXEL_SIZE
+            function resizeCanvas() {
+                const containerWidth = document.querySelector('.container').offsetWidth
+                PIXEL_SIZE = Math.floor(containerWidth / CANVAS_SIZE)
+                canvas.width = CANVAS_SIZE * PIXEL_SIZE
+                canvas.height = CANVAS_SIZE * PIXEL_SIZE
+                redrawCanvas()
+            }
+
+            function redrawCanvas() {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                ctx.putImageData(imageData, 0, 0)
+            }
+
+            window.addEventListener('resize', resizeCanvas)
+            resizeCanvas()
 
             let currentColor = '#000000'
             let isDrawing = false
@@ -184,10 +215,14 @@
                 addToHistory()
             }
 
-            function download() {
+            function download(format) {
                 const link = document.createElement('a')
-                link.download = 'pixel_art.png'
-                link.href = canvas.toDataURL()
+                link.download = `pixel_art.${format}`
+                if (format === 'png') {
+                    link.href = canvas.toDataURL()
+                } else if (format === 'jpg') {
+                    link.href = canvas.toDataURL('image/jpeg')
+                }
                 link.click()
             }
 
@@ -250,7 +285,8 @@
             undoBtn.addEventListener('click', undo)
             redoBtn.addEventListener('click', redo)
             clearBtn.addEventListener('click', clear)
-            downloadBtn.addEventListener('click', download)
+            downloadBtn.addEventListener('click', () => download('png'))
+            downloadJpgBtn.addEventListener('click', () => download('jpg'))
 
             imageUpload.addEventListener('change', (e) => {
                 const file = e.target.files[0]
