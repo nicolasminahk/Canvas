@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <title>Repixel.ar Console</title>
+        <title>Pixelao</title>
         <link rel="icon" href="public/favicon.ico" type="image/x-icon" />
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -147,6 +147,63 @@
                 border-radius: 5px;
             }
 
+            #undo,
+            #redo {
+                font-size: 20px;
+                padding: 10px 15px;
+                background-color: #2a2a2a;
+                border: 3px solid #0f0;
+                color: #0f0;
+                text-shadow: 0 0 5px #0f0;
+                box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            }
+
+            #undo:hover,
+            #redo:hover {
+                background-color: #3a3a3a;
+                transform: translateY(-2px);
+                box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            }
+
+            .creator-signature {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                font-size: 8px;
+                color: #0f0;
+                opacity: 0.6;
+                animation: blink 2s infinite;
+            }
+
+            @keyframes blink {
+                0%,
+                100% {
+                    opacity: 0.6;
+                }
+                50% {
+                    opacity: 0.3;
+                }
+            }
+
+            .pixel-dot {
+                display: inline-block;
+                width: 4px;
+                height: 4px;
+                background-color: #0f0;
+                margin: 0 2px;
+                animation: pixelFloat 3s infinite;
+            }
+
+            @keyframes pixelFloat {
+                0%,
+                100% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(-2px);
+                }
+            }
+
             @media (max-width: 600px) {
                 .console-container {
                     padding: 10px;
@@ -173,6 +230,11 @@
             <div class="screen-container">
                 <h1>Pixelao</h1>
                 <canvas id="pixelCanvas"></canvas>
+                <div class="creator-signature">
+                    <span class="pixel-dot"></span>
+                    Created by S333MA
+                    <span class="pixel-dot"></span>
+                </div>
             </div>
             <div class="control-panel">
                 <div class="color-controls">
