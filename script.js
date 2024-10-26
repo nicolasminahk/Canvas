@@ -47,9 +47,14 @@ function addToHistory() {
     updateButtons()
 }
 
+// function updateButtons() {
+//     undoBtn.disabled = historyIndex <= 0
+//     redoBtn.disabled = historyIndex >= history.length - 1
+// }
 function updateButtons() {
     undoBtn.disabled = historyIndex <= 0
     redoBtn.disabled = historyIndex >= history.length - 1
+    console.log('History length:', history.length, 'Current index:', historyIndex) // Para debug
 }
 
 function undo() {
@@ -68,8 +73,13 @@ function redo() {
     }
 }
 
+// function clear() {
+//     ctx.clearRect(0, 0, canvas.width, canvas.height)
+//     addToHistory()
+// }
 function clear() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.fillStyle = '#FFFFFF' // O el color que quieras como fondo
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
     addToHistory()
 }
 
@@ -179,11 +189,19 @@ function drawPixel(x, y) {
 // Event Listeners
 window.addEventListener('resize', resizeCanvas)
 
+// canvas.addEventListener('mousedown', (e) => {
+//     isDrawing = true
+//     drawPixel(e.offsetX, e.offsetY)
+//     if (drawMode.value !== 'pixel') {
+//         addToHistory()
+//     }
+// })
 canvas.addEventListener('mousedown', (e) => {
     isDrawing = true
+    const prevState = getCanvasState() // Guarda el estado antes de dibujar
     drawPixel(e.offsetX, e.offsetY)
-    if (drawMode.value !== 'pixel') {
-        addToHistory()
+    if (drawMode.value === 'pixel') {
+        addToHistory() // Añade al historial después de cada pixel
     }
 })
 
@@ -281,23 +299,32 @@ document.addEventListener('keydown', (e) => {
     }
 })
 
-// Corrige la función redo (reemplaza la existente)
-function redo() {
-    if (historyIndex < history.length - 1) {
-        historyIndex++
-        setCanvasState(history[historyIndex])
-        updateButtons()
-    }
-}
+// // Corrige la función redo (reemplaza la existente)
+// function redo() {
+//     if (historyIndex < history.length - 1) {
+//         historyIndex++
+//         setCanvasState(history[historyIndex])
+//         updateButtons()
+//     }
+// }
 
 // Asegúrate que la función addToHistory sea así
+// function addToHistory() {
+//     historyIndex++
+//     // Elimina todos los estados después del índice actual
+//     history = history.slice(0, historyIndex)
+//     history.push(getCanvasState())
+//     updateButtons()
+// }
+
 function addToHistory() {
-    historyIndex++
     // Elimina todos los estados después del índice actual
-    history = history.slice(0, historyIndex)
+    history = history.slice(0, historyIndex + 1)
     history.push(getCanvasState())
+    historyIndex = history.length - 1
     updateButtons()
 }
 // Initialize canvas
 resizeCanvas()
+clear()
 addToHistory()
