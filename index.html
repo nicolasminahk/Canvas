@@ -300,7 +300,9 @@
 <!DOCTYPE html>
 <html lang="es">
     <head>
-        <!-- [Previous head content remains the same until style tag] -->
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>Pixelao - Editor de Pixel Art Online</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -430,12 +432,6 @@
                 display: none;
             }
 
-            .new-controls {
-                display: flex;
-                gap: 10px;
-                margin-top: 10px;
-            }
-
             .mode-select {
                 font-family: 'Press Start 2P', cursive;
                 background-color: #444;
@@ -465,8 +461,8 @@
 
             .creator-signature {
                 position: absolute;
-                bottom: 20px;
-                right: 20px;
+                bottom: 10px;
+                right: 10px;
                 font-size: 8px;
                 color: #0f0;
                 opacity: 0.6;
@@ -510,7 +506,7 @@
                 }
             }
 
-            /* Media queries para el nuevo layout en desktop */
+            /* Desktop Layout (≥1024px) */
             @media (min-width: 1024px) {
                 body {
                     padding: 40px;
@@ -538,8 +534,6 @@
                     width: 200px;
                     margin-top: 0;
                     min-height: 100%;
-                    display: flex;
-                    flex-direction: column;
                 }
 
                 .controls {
@@ -574,38 +568,95 @@
 
                 .sidebar-footer {
                     display: block;
-                    font-size: 8px;
-                    color: #0f0;
-                    opacity: 0.6;
-                    animation: blink 2s infinite;
                 }
             }
 
-            /* Mantener el diseño original en mobile */
+            /* Mobile Layout (≤600px) */
             @media (max-width: 600px) {
-                .console-container {
+                body {
                     padding: 10px;
                 }
 
+                .console-container {
+                    padding: 15px;
+                }
+
+                .screen-container {
+                    padding: 15px;
+                }
+
                 h1 {
-                    font-size: 1rem;
+                    font-size: 1.2rem;
+                    margin-bottom: 15px;
                 }
 
                 .sidebar-title {
                     display: none;
                 }
 
+                .control-panel {
+                    padding: 12px;
+                }
+
                 button,
                 #uploadLabel {
-                    font-size: 8px;
-                    padding: 6px;
+                    font-size: 9px;
+                    padding: 8px;
                 }
 
                 .controls {
                     grid-template-columns: repeat(2, 1fr);
+                    gap: 8px;
+                }
+
+                .color-controls {
+                    gap: 8px;
+                }
+
+                #colorPicker {
+                    width: 40px;
+                    height: 40px;
+                }
+
+                .creator-signature {
+                    position: absolute;
+                    bottom: 8px;
+                    right: 8px;
+                    font-size: 8px;
+                    display: block;
                 }
 
                 .sidebar-footer {
+                    display: none;
+                }
+
+                #undo,
+                #redo {
+                    font-size: 16px;
+                    padding: 8px 12px;
+                }
+            }
+
+            /* Tablet/Medium Layout (601px-1023px) */
+            @media (min-width: 601px) and (max-width: 1023px) {
+                .console-container {
+                    width: 90vw;
+                    max-width: 800px;
+                }
+
+                .controls {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+
+                .creator-signature {
+                    display: block;
+                }
+
+                .sidebar-footer {
+                    display: none;
+                }
+
+                .sidebar-title {
                     display: none;
                 }
             }
