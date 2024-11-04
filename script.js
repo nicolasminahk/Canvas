@@ -299,23 +299,26 @@ document.addEventListener('keydown', (e) => {
     }
 })
 
-// // Corrige la función redo (reemplaza la existente)
-// function redo() {
-//     if (historyIndex < history.length - 1) {
-//         historyIndex++
-//         setCanvasState(history[historyIndex])
-//         updateButtons()
-//     }
-// }
+// Función para guardar el estado del canvas
+function saveCanvasState() {
+    const imageData = canvas.toDataURL()
+    localStorage.setItem('pixelaoCanvasState', imageData)
+}
 
-// Asegúrate que la función addToHistory sea así
-// function addToHistory() {
-//     historyIndex++
-//     // Elimina todos los estados después del índice actual
-//     history = history.slice(0, historyIndex)
-//     history.push(getCanvasState())
-//     updateButtons()
-// }
+// Función para cargar el estado del canvas
+function loadCanvasState() {
+    const savedState = localStorage.getItem('pixelaoCanvasState')
+    if (savedState) {
+        const img = new Image()
+        img.onload = function () {
+            ctx.drawImage(img, 0, 0)
+        }
+        img.src = savedState
+    }
+}
+
+// Modifica las funciones existentes de dibujo para que guarden el estado
+// Después de cada acción de dibujo, agregar:
 
 function addToHistory() {
     // Elimina todos los estados después del índice actual
@@ -325,6 +328,8 @@ function addToHistory() {
     updateButtons()
 }
 // Initialize canvas
+saveCanvasState()
+
 resizeCanvas()
 clear()
 addToHistory()
